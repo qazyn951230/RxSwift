@@ -248,6 +248,18 @@ extension PrimitiveSequenceType where TraitType == SingleTrait {
         -> Single<R> {
             return Single<R>(raw: primitiveSequence.source.flatMap(selector))
     }
+    
+    /**
+     Projects each element of an observable sequence into a new form.
+     
+     - parameter transform: A transform function to apply to each source element.
+     - returns: An observable sequence whose elements are the result of invoking the transform function on each element of source.
+     
+     */
+    public func compactMap<R>(_ transform: @escaping (ElementType) throws -> R?)
+        -> Single<R> {
+            return Single<R>(raw: primitiveSequence.source.compactMap(transform))
+    }
 
     /**
      Projects each element of an observable sequence to an observable sequence and merges the resulting observable sequences into one observable sequence.

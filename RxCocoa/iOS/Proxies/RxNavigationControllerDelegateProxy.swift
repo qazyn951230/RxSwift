@@ -31,7 +31,7 @@
         }
 
         // Register known implementations
-        public static func registerKnownImplementations() {
+        open class func registerKnownImplementations() {
             self.register { RxNavigationControllerDelegateProxy(navigationController: $0) }
         }
     }

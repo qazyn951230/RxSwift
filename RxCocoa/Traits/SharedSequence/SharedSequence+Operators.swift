@@ -25,6 +25,24 @@ extension SharedSequenceConvertibleType {
     }
 }
 
+// MARK: compactMap
+extension SharedSequenceConvertibleType {
+    
+    /**
+     Projects each element of an observable sequence into a new form.
+     
+     - parameter transform: A transform function to apply to each source element.
+     - returns: An observable sequence whose elements are the result of invoking the transform function on each element of source.
+     
+     */
+    public func compactMap<R>(_ selector: @escaping (E) throws -> R?) -> SharedSequence<SharingStrategy, R> {
+            let source = self
+                .asObservable()
+                .compactMap(selector)
+            return SharedSequence<SharingStrategy, R>(source)
+    }
+}
+
 // MARK: filter
 extension SharedSequenceConvertibleType {
     /**
