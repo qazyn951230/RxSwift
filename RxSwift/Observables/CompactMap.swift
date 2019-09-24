@@ -2,32 +2,41 @@
 //  CompactMap.swift
 //  RxSwift
 //
+//  Created by Michael Long on 04/09/2019.
+//  Copyright © 2015 Krunoslav Zaher. All rights reserved.
+//
 
 extension ObservableType {
 
     /**
-     Projects each element of an observable sequence into a new form.
+     Projects each element of an observable sequence into an optional form and filters all optional results.
 
-     - parameter transform: A transform function to apply to each source element.
-     - returns: An observable sequence whose elements are the result of invoking the transform function on each element of source.
+     Equivalent to:
+
+     func compactMap<Result>(_ transform: @escaping (Self.E) throws -> Result?) -> RxSwift.Observable<Result> {
+        return self.map { try? transform($0) }.filter { $0 != nil }.map { $0! }
+     }
+
+     - parameter transform: A transform function to apply to each source element and which returns an element or nil.
+     - returns: An observable sequence whose elements are the result of filtering the transform function for each element of the source.
 
      */
-    public func compactMap<R>(_ transform: @escaping (E) throws -> R?)
-        -> Observable<R> {
-        return CompactMap(source: asObservable(), transform: transform)
+    public func compactMap<Result>(_ transform: @escaping (Element) throws -> Result?)
+        -> Observable<Result> {
+            return CompactMap(source: self.asObservable(), transform: transform)
     }
 }
 
-final fileprivate class CompactMapSink<SourceType, O : ObserverType> : Sink<O>, ObserverType {
+final private class CompactMapSink<SourceType, Observer: ObserverType>: Sink<Observer>, ObserverType {
     typealias Transform = (SourceType) throws -> ResultType?
 
-    typealias ResultType = O.E
+    typealias ResultType = Observer.Element 
     typealias Element = SourceType
 
     private let _transform: Transform
-    
-    init(transform: @escaping Transform, observer: O, cancel: Cancelable) {
-        _transform = transform
+
+    init(transform: @escaping Transform, observer: Observer, cancel: Cancelable) {
+        self._transform = transform
         super.init(observer: observer, cancel: cancel)
     }
 
@@ -35,24 +44,25 @@ final fileprivate class CompactMapSink<SourceType, O : ObserverType> : Sink<O>, 
         switch event {
         case .next(let element):
             do {
-                if let compactMappedElement = try _transform(element) {
-                    forwardOn(.next(compactMappedElement))
+                if let mappedElement = try self._transform(element) {
+                    self.forwardOn(.next(mappedElement))
                 }
-            } catch let e {
-                forwardOn(.error(e))
-                dispose()
+            }
+            catch let e {
+                self.forwardOn(.error(e))
+                self.dispose()
             }
         case .error(let error):
-            forwardOn(.error(error))
-            dispose()
+            self.forwardOn(.error(error))
+            self.dispose()
         case .completed:
-            forwardOn(.completed)
-            dispose()
+            self.forwardOn(.completed)
+            self.dispose()
         }
     }
 }
 
-final fileprivate class CompactMap<SourceType, ResultType>: Producer<ResultType> {
+final private class CompactMap<SourceType, ResultType>: Producer<ResultType> {
     typealias Transform = (SourceType) throws -> ResultType?
 
     private let _source: Observable<SourceType>
@@ -60,14 +70,13 @@ final fileprivate class CompactMap<SourceType, ResultType>: Producer<ResultType>
     private let _transform: Transform
 
     init(source: Observable<SourceType>, transform: @escaping Transform) {
-        _source = source
-        _transform = transform
+        self._source = source
+        self._transform = transform
     }
-    
-    override func run<O: ObserverType>(_ observer: O, cancel: Cancelable)
-        -> (sink: Disposable, subscription: Disposable) where O.E == ResultType {
-        let sink = CompactMapSink(transform: _transform, observer: observer, cancel: cancel)
-        let subscription = _source.subscribe(sink)
+
+    override func run<Observer: ObserverType>(_ observer: Observer, cancel: Cancelable) -> (sink: Disposable, subscription: Disposable) where Observer.Element == ResultType {
+        let sink = CompactMapSink(transform: self._transform, observer: observer, cancel: cancel)
+        let subscription = self._source.subscribe(sink)
         return (sink: sink, subscription: subscription)
     }
 }
