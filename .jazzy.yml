@@ -99,6 +99,7 @@ custom_categories:
   - UITextView+Rx
   - UIView+Rx
   - UIViewController+Rx
+  - WKWebView+Rx
 - name: RxCocoa/iOS/Protocols
   children:
   - RxCollectionViewDataSourceType
@@ -122,6 +123,7 @@ custom_categories:
   - RxTableViewDelegateProxy
   - RxTextStorageDelegateProxy
   - RxTextViewDelegateProxy
+  - RxWKNavigationDelegateProxy
 - name: RxCocoa/macOS
   children:
   - NSButton+Rx
